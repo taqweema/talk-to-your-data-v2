@@ -1,10 +1,11 @@
+import os
+import re
+import openai
+import tempfile
+from PyPDF2 import PdfReader
 from langchain.text_splitter import RecursiveCharacterTextSplitter
 from langchain_openai import OpenAIEmbeddings
 from langchain_community.vectorstores import Chroma
-from PyPDF2 import PdfReader
-import openai
-import tempfile
-import re
 
 
 def extract_pdf_pages_with_text(text_chunks, pdf_file_path):
@@ -34,6 +35,14 @@ def process_and_query(document_text, user_question, return_sources=False):
 
     # Step 3: Use temporary vector DB
     with tempfile.TemporaryDirectory() as tmpdir:
+        # Disable LangChain & Chroma telemetry (fixes protobuf errors in deployment)
+        os.environ["TOKENIZERS_PARALLELISM"] = "false"
+        os.environ["LANGCHAIN_TRACING_V2"] = "false"
+        os.environ["LANGCHAIN_API_KEY"] = ""
+        os.environ["LANGCHAIN_PROJECT"] = ""
+        os.environ["LANGCHAIN_ENDPOINT"] = ""
+        os.environ["LANGCHAIN_CLIENT"] = "false"
+
         vectordb = Chroma.from_texts(
             chunks,
             embedding=embeddings,
