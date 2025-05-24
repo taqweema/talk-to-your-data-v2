@@ -1,0 +1,13 @@
+# Ignore Python environment folders
+.venv/
+env/
+__pycache__/
+
+# Ignore Streamlit secrets
+.env
+
+# Ignore OS files
+.DS_Store
+
+# Ignore Streamlit deployment cache
+.streamlit/config.toml

@@ -1,0 +1,11 @@
+streamlit>=1.27
+openai>=1.2
+langchain>=0.1.0
+chromadb>=0.4.24
+PyMuPDF>=1.22.0
+pytesseract
+Pillow>=8.0.0
+tiktoken
+python-dotenv
+langdetect
+pypdf2
