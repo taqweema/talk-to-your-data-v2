@@ -14,10 +14,15 @@ load_dotenv()
 openai.api_key = os.getenv("OPENAI_API_KEY")
 
 # Streamlit page setup
-st.set_page_config(page_title="Talk to Your Data V2", layout="centered", initial_sidebar_state="collapsed")
+st.set_page_config(
+    page_title="Talk to Your Data V2",
+    layout="centered",
+    initial_sidebar_state="collapsed",
+)
 
 # Custom CSS and JS for citation click handling
-st.markdown("""
+st.markdown(
+    """
     <style>
     .block-container {
         padding-top: 2rem;
@@ -74,23 +79,31 @@ st.markdown("""
         });
     });
     </script>
-""", unsafe_allow_html=True)
+""",
+    unsafe_allow_html=True,
+)
 
 # --- Header Section ---
-st.markdown("""
+st.markdown(
+    """
     <div class='header'>
         <h1>Talk to Your Data V2</h1>
         <p style='margin-bottom: 2rem;'>Turn your documents into insights — just upload and ask.</p>
     </div>
-""", unsafe_allow_html=True)
+""",
+    unsafe_allow_html=True,
+)
 
 # --- Upload Area Box Info ---
-st.markdown("""
+st.markdown(
+    """
     <div class='upload-area'>
         <h4>📂 Upload your documents to begin</h4>
         <p style='margin: 0.5rem 0 0 0;'>Limit 200MB per file • PDF, TXT, DOCX, CSV, XLS, PPTX, JPG, JPEG, PNG</p>
     </div>
-""", unsafe_allow_html=True)
+""",
+    unsafe_allow_html=True,
+)
 
 # --- File Upload ---
 uploaded_files = st.file_uploader(
@@ -98,7 +111,7 @@ uploaded_files = st.file_uploader(
     type=["pdf", "txt", "docx", "csv", "xls", "pptx", "jpg", "jpeg", "png"],
     label_visibility="collapsed",
     accept_multiple_files=True,
-    key="main_file_uploader"
+    key="main_file_uploader",
 )
 
 # --- File Handling ---
@@ -115,7 +128,10 @@ if uploaded_files:
 
         if extracted and "[ERROR]" not in extracted:
             combined_texts.append(extracted)
-            st.markdown(f"<p class='uploadedFileName'>📄 {uploaded_file.name}</p>", unsafe_allow_html=True)
+            st.markdown(
+                f"<p class='uploadedFileName'>📄 {uploaded_file.name}</p>",
+                unsafe_allow_html=True,
+            )
         else:
             st.warning(f"⚠️ Skipped file: {uploaded_file.name} (unsupported or error)")
 
@@ -123,7 +139,9 @@ if uploaded_files:
 
 # --- Question Input & Result Display ---
 if file_text:
-    user_question = st.text_input("Ask a question about your data", placeholder="e.g., What are the key findings?")
+    user_question = st.text_input(
+        "Ask a question about your data", placeholder="e.g., What are the key findings?"
+    )
 
     if user_question:
         lang = detect(user_question)
@@ -144,23 +162,32 @@ if file_text:
         if answer:
             # Convert [1] style tags into clickable spans
             def make_clickable(text):
-                return re.sub(r"\[(\d+)\]", r"<span class='citation-ref'>[\1]</span>", text)
+                return re.sub(
+                    r"\[(\d+)\]", r"<span class='citation-ref'>[\1]</span>", text
+                )
 
             answer_with_clicks = make_clickable(answer)
-            st.markdown("<div class='result-block'><h4>Results</h4><p>" + answer_with_clicks.replace("\n", "<br>") + "</p></div>", unsafe_allow_html=True)
+            st.markdown(
+                "<div class='result-block'><h4>Results</h4><p>"
+                + answer_with_clicks.replace("\n", "<br>")
+                + "</p></div>",
+                unsafe_allow_html=True,
+            )
 
         if sources:
             st.sidebar.markdown("### 📚 Citations")
             for ref_num, meta in sources.items():
-                st.sidebar.markdown(f"""
+                st.sidebar.markdown(
+                    f"""
                 **[{ref_num}] Page {meta['page_number']}**
                 > {meta['excerpt']}
-                """)
+                """
+                )
 
         if usage:
             total_tokens = usage.get("total_tokens", 0)
             cost = (total_tokens / 1000) * 0.005
             st.markdown(
                 f"<p style='text-align:center; color:gray;'>🧾 Used <strong>{total_tokens}</strong> tokens – Approx cost: <strong>${cost:.4f}</strong></p>",
-                unsafe_allow_html=True
+                unsafe_allow_html=True,
             )

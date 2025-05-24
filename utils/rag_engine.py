@@ -6,7 +6,6 @@ import openai
 import tempfile
 import re
 
-
 def extract_pdf_pages_with_text(text_chunks, pdf_file_path):
     reader = PdfReader(pdf_file_path)
     page_sources = []
@@ -34,12 +33,12 @@ def process_and_query(document_text, user_question, return_sources=False):
 
     # Step 3: Use temporary vector DB
     with tempfile.TemporaryDirectory() as tmpdir:
-    vectordb = Chroma.from_texts(
-        chunks,
-        embedding=embeddings,
-        persist_directory=tmpdir
-    )
-    retriever = vectordb.as_retriever(search_kwargs={"k": 6})
+        vectordb = Chroma.from_texts(
+            chunks,
+            embedding=embeddings,
+            persist_directory=tmpdir
+        )
+        retriever = vectordb.as_retriever(search_kwargs={"k": 6})
         docs = retriever.get_relevant_documents(user_question)
 
     # Step 4: Generate context and reference map
@@ -68,8 +67,8 @@ def process_and_query(document_text, user_question, return_sources=False):
     usage = response.get("usage", {})
 
     if return_sources:
-        # Extract citation numbers like [1], [2]...
-        refs = list(set(int(num) for num in re.findall(r"\\[(\\d+)\\]", answer)))
+        # Extract citation numbers like [1], [2], etc.
+        refs = list(set(int(num) for num in re.findall(r"\[(\d+)\]", answer)))
         source_details = {}
         for ref in refs:
             meta = source_map.get(ref, {})
