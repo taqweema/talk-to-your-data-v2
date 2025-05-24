@@ -9,3 +9,4 @@ tiktoken
 python-dotenv
 langdetect
 pypdf2
+python-docx
