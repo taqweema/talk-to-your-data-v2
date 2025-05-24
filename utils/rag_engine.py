@@ -1,10 +1,11 @@
 from langchain.text_splitter import RecursiveCharacterTextSplitter
 from langchain_openai import OpenAIEmbeddings
-from langchain_community.vectorstores import Chroma
+from langchain_community.vectorstores import FAISS
 from PyPDF2 import PdfReader
 import openai
 import tempfile
 import re
+
 
 def extract_pdf_pages_with_text(text_chunks, pdf_file_path):
     reader = PdfReader(pdf_file_path)
@@ -33,10 +34,9 @@ def process_and_query(document_text, user_question, return_sources=False):
 
     # Step 3: Use temporary vector DB
     with tempfile.TemporaryDirectory() as tmpdir:
-        vectordb = Chroma.from_texts(
+        vectordb = FAISS.from_texts(
             chunks,
-            embedding=embeddings,
-            persist_directory=tmpdir
+            embedding=embeddings
         )
         retriever = vectordb.as_retriever(search_kwargs={"k": 6})
         docs = retriever.get_relevant_documents(user_question)
@@ -67,7 +67,6 @@ def process_and_query(document_text, user_question, return_sources=False):
     usage = response.get("usage", {})
 
     if return_sources:
-        # Extract citation numbers like [1], [2], etc.
         refs = list(set(int(num) for num in re.findall(r"\[(\d+)\]", answer)))
         source_details = {}
         for ref in refs:
