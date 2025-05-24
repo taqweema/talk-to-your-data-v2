@@ -35,19 +35,20 @@ def process_and_query(document_text, user_question, return_sources=False):
 
     # Step 3: Use temporary vector DB
     with tempfile.TemporaryDirectory() as tmpdir:
-        # Disable LangChain & Chroma telemetry (fixes protobuf errors in deployment)
+    # Disable LangChain & Chroma telemetry (fixes protobuf errors in deployment)
         os.environ["TOKENIZERS_PARALLELISM"] = "false"
-        os.environ["LANGCHAIN_TRACING_V2"] = "false"
-        os.environ["LANGCHAIN_API_KEY"] = ""
-        os.environ["LANGCHAIN_PROJECT"] = ""
-        os.environ["LANGCHAIN_ENDPOINT"] = ""
-        os.environ["LANGCHAIN_CLIENT"] = "false"
+    os.environ["LANGCHAIN_TRACING_V2"] = "false"
+    os.environ["LANGCHAIN_API_KEY"] = ""
+    os.environ["LANGCHAIN_PROJECT"] = ""
+    os.environ["LANGCHAIN_ENDPOINT"] = ""
+    os.environ["LANGCHAIN_CLIENT"] = "false"
 
+    with tempfile.TemporaryDirectory() as tmpdir:
         vectordb = Chroma.from_texts(
-            chunks,
-            embedding=embeddings,
-            persist_directory=tmpdir
-        )
+        chunks,
+        embedding=embeddings,
+        persist_directory=tmpdir
+    )
         retriever = vectordb.as_retriever(search_kwargs={"k": 6})
         docs = retriever.get_relevant_documents(user_question)
 
