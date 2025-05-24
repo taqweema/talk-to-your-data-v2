@@ -11,3 +11,4 @@ langdetect
 pypdf2
 python-docx
 python-pptx
+langchain-openai
