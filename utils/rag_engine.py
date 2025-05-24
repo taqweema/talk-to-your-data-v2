@@ -1,6 +1,6 @@
 from langchain.text_splitter import RecursiveCharacterTextSplitter
 from langchain_openai import OpenAIEmbeddings
-from langchain_community.vectorstores import FAISS
+from langchain_community.vectorstores import Chroma
 from PyPDF2 import PdfReader
 import openai
 import tempfile
@@ -34,8 +34,12 @@ def process_and_query(document_text, user_question, return_sources=False):
 
     # Step 3: Use temporary vector DB
     with tempfile.TemporaryDirectory() as tmpdir:
-        vectordb = FAISS.from_texts(chunks, embedding=embeddings)
-        retriever = vectordb.as_retriever(search_kwargs={"k": 6})
+    vectordb = Chroma.from_texts(
+        chunks,
+        embedding=embeddings,
+        persist_directory=tmpdir
+    )
+    retriever = vectordb.as_retriever(search_kwargs={"k": 6})
         docs = retriever.get_relevant_documents(user_question)
 
     # Step 4: Generate context and reference map
