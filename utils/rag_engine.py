@@ -5,7 +5,7 @@ import tempfile
 from PyPDF2 import PdfReader
 from langchain.text_splitter import RecursiveCharacterTextSplitter
 from langchain_openai import OpenAIEmbeddings
-from langchain_community.vectorstores import FAISS
+from langchain_community.vectorstores import DocArrayInMemorySearch
 
 
 def extract_pdf_pages_with_text(text_chunks, pdf_file_path):
@@ -44,7 +44,7 @@ def process_and_query(document_text, user_question, return_sources=False):
     os.environ["LANGCHAIN_CLIENT"] = "false"
 
     with tempfile.TemporaryDirectory() as tmpdir:
-        vectordb = FAISS.from_texts(chunks, embedding=embeddings)
+        vectordb = DocArrayInMemorySearch.from_texts(chunks, embedding=embeddings)
 
         retriever = vectordb.as_retriever(search_kwargs={"k": 6})
         docs = retriever.get_relevant_documents(user_question)
