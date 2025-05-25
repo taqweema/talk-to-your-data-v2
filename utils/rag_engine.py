@@ -66,13 +66,16 @@ def process_and_query(document_text, user_question, return_sources=False):
     ]
 
     # Step 5: Call OpenAI
-    response = openai.ChatCompletion.create(
+    client = openai.OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
+
+    response = client.chat.completions.create(
         model="gpt-4o",
         messages=messages,
         temperature=0.3
     )
-    answer = response["choices"][0]["message"]["content"]
-    usage = response.get("usage", {})
+    answer = response.choices[0].message.content
+    usage = getattr(response, "usage", {})
+
 
     if return_sources:
         refs = list(set(int(num) for num in re.findall(r"\[(\d+)\]", answer)))
