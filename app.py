@@ -185,7 +185,7 @@ if file_text:
                 )
 
         if usage:
-            total_tokens = usage.get("total_tokens", 0)
+            total_tokens = getattr(usage, "total_tokens", 0)
             cost = (total_tokens / 1000) * 0.005
             st.markdown(
                 f"<p style='text-align:center; color:gray;'>🧾 Used <strong>{total_tokens}</strong> tokens – Approx cost: <strong>${cost:.4f}</strong></p>",
