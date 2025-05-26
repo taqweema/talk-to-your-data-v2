@@ -14,3 +14,4 @@ pytesseract==0.3.13
 pandas==2.2.3
 langdetect==1.0.9
 docarray==0.40.0
+PyMuPDF==1.25.5
