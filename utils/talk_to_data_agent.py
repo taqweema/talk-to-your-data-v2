@@ -21,7 +21,8 @@ def document_retriever_tool(question: str, document: str) -> str:
     chunks = splitter.split_text(document)
     embeddings = OpenAIEmbeddings()
     vectordb = DocArrayInMemorySearch.from_texts(chunks, embedding=embeddings)
-    retriever = vectordb.as_retriever(search_kwargs={"k": 6})
+    retriever = vectordb.as_retriever(search_kwargs={"k": 10})
+
     docs = retriever.get_relevant_documents(question)
     context = "\n\n".join(doc.page_content for doc in docs)
     return context
