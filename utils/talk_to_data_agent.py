@@ -12,28 +12,30 @@ try:
 except (ModuleNotFoundError, KeyError):
     api_key = os.getenv("OPENAI_API_KEY")
 
-import openai
 from openai import OpenAI
 
-# Step 2: Define your tool
+# Step 2: Define the retrieval tool (returns top 8 relevant chunks)
 def document_retriever_tool(question: str, document: str) -> str:
     splitter = RecursiveCharacterTextSplitter(chunk_size=400, chunk_overlap=100)
     chunks = splitter.split_text(document)
     embeddings = OpenAIEmbeddings()
     vectordb = DocArrayInMemorySearch.from_texts(chunks, embedding=embeddings)
-    retriever = vectordb.as_retriever(search_kwargs={"k": 12})
-
+    retriever = vectordb.as_retriever(search_kwargs={"k": 8})
     docs = retriever.get_relevant_documents(question)
+    # Only return relevant content
     context = "\n\n".join(doc.page_content for doc in docs)
     return context
 
-# Step 3: Convert it to an OpenAI tool
+# Step 3: Convert tool to OpenAI format
 tools = [
     {
         "type": "function",
         "function": {
             "name": "document_retriever_tool",
-            "description": "Retrieve the most relevant parts of the document for a given question.",
+            "description": (
+                "Retrieve the most relevant parts of the document for a given question. "
+                "Always use this tool to answer questions based only on what you find in the document."
+            ),
             "parameters": {
                 "type": "object",
                 "properties": {
@@ -52,10 +54,10 @@ client = OpenAI(api_key=api_key)
 agent = client.beta.assistants.create(
     name="Talk to Your Data Agent",
     instructions=(
-        "You are a helpful AI assistant. Always use the document retrieval tool to search the document and answer questions directly using content from the provided document. "
-        "If the user has uploaded a document, never ask for more documents. Instead, do your best to answer based only on what is in the provided content. Quote or reference the document where possible. "
-        "When answering, do not repeat or paste the whole document. Always answer in 2-3 sentences, summarizing or quoting only the most relevant portion. If possible, cite exactly where you found the information. "
-        "Answer in the same language as the user's question if possible."
+        "You are a helpful AI assistant. For every user question, always call the document retrieval tool to search for the answer. "
+        "Only answer based on the retrieved results, never by repeating or summarizing the whole document. "
+        "Answer in 2-3 sentences, summarizing or quoting the most relevant evidence. "
+        "Cite or quote the source chunk where possible, and answer in the same language as the user's question."
     ),
     model="gpt-4o",
     tools=tools,
@@ -63,21 +65,16 @@ agent = client.beta.assistants.create(
 
 # Step 5: Function to run agent on question + doc
 def run_talk_to_data_agent(question, file_text):
-    # Debug print: Show what's being sent
-    print("=== Document content being sent to agent (first 1000 chars) ===")
-    print(file_text[:1000])  # Only print first 1000 characters
-    print("=== User question being sent to agent ===")
-    print(question)
-
     thread = client.beta.threads.create()
+
+    # Add user message (just the question!)
     client.beta.threads.messages.create(
         thread_id=thread.id,
         role="user",
-        content=f"Here is the document for analysis:\n\n{file_text}\n\nMy question is: {question}",
+        content=question,
     )
-    # ...rest of code...
 
-    # Run the assistant
+    # Run the assistant – no full document in the message, only as tool input
     run = client.beta.threads.runs.create(
         thread_id=thread.id,
         assistant_id=agent.id
@@ -89,6 +86,12 @@ def run_talk_to_data_agent(question, file_text):
         time.sleep(1)
         run = client.beta.threads.runs.retrieve(thread_id=thread.id, run_id=run.id)
 
+    # Get agent's answer
     messages = client.beta.threads.messages.list(thread_id=thread.id)
-    latest_reply = messages.data[0].content[0].text.value
+    # Sometimes multiple messages, so get the last assistant reply
+    latest_reply = ""
+    for m in messages.data:
+        for part in m.content:
+            if hasattr(part, "text") and hasattr(part.text, "value"):
+                latest_reply = part.text.value
     return latest_reply
