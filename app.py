@@ -153,7 +153,10 @@ if file_text:
             prompt = f"{user_question}\nAnswer in the same script and tone."
 
         with st.spinner("Thinking..."):
-            result = process_and_query(file_text, prompt, return_sources=True)
+            from talk_to_data_agent import run_talk_to_data_agent
+
+            result_text = run_talk_to_data_agent(user_question, file_text)
+            st.markdown(result_text)
 
         answer = result.get("answer")
         usage = result.get("usage", {})
