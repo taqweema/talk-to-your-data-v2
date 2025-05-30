@@ -17,7 +17,7 @@ from openai import OpenAI
 
 # Step 2: Define your tool
 def document_retriever_tool(question: str, document: str) -> str:
-    splitter = RecursiveCharacterTextSplitter(chunk_size=1000, chunk_overlap=200)
+    splitter = RecursiveCharacterTextSplitter(chunk_size=400, chunk_overlap=100)
     chunks = splitter.split_text(document)
     embeddings = OpenAIEmbeddings()
     vectordb = DocArrayInMemorySearch.from_texts(chunks, embedding=embeddings)
@@ -51,9 +51,11 @@ client = OpenAI(api_key=api_key)
 
 agent = client.beta.assistants.create(
     name="Talk to Your Data Agent",
-        instructions=(
+    instructions=(
         "You are a helpful AI assistant. Always use the document retrieval tool to search the document and answer questions directly using content from the provided document. "
-        "If the user has uploaded a document, never ask for more documents. Instead, do your best to answer based only on what is in the provided content. Quote or reference the document where possible."
+        "If the user has uploaded a document, never ask for more documents. Instead, do your best to answer based only on what is in the provided content. Quote or reference the document where possible. "
+        "When answering, do not repeat or paste the whole document. Always answer in 2-3 sentences, summarizing or quoting only the most relevant portion. If possible, cite exactly where you found the information. "
+        "Answer in the same language as the user's question if possible."
     ),
     model="gpt-4o",
     tools=tools,
