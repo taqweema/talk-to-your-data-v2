@@ -21,7 +21,7 @@ def document_retriever_tool(question: str, document: str) -> str:
     chunks = splitter.split_text(document)
     embeddings = OpenAIEmbeddings()
     vectordb = DocArrayInMemorySearch.from_texts(chunks, embedding=embeddings)
-    retriever = vectordb.as_retriever(search_kwargs={"k": 10})
+    retriever = vectordb.as_retriever(search_kwargs={"k": 12})
 
     docs = retriever.get_relevant_documents(question)
     context = "\n\n".join(doc.page_content for doc in docs)
@@ -51,9 +51,9 @@ client = OpenAI(api_key=api_key)
 
 agent = client.beta.assistants.create(
     name="Talk to Your Data Agent",
-    instructions=(
-        "You are a helpful AI assistant. Use tools to retrieve, understand, and answer questions from long documents. "
-        "Always explain your reasoning and cite sources where possible."
+        instructions=(
+        "You are a helpful AI assistant. Always use the document retrieval tool to search the document and answer questions directly using content from the provided document. "
+        "If the user has uploaded a document, never ask for more documents. Instead, do your best to answer based only on what is in the provided content. Quote or reference the document where possible."
     ),
     model="gpt-4o",
     tools=tools,
@@ -61,13 +61,20 @@ agent = client.beta.assistants.create(
 
 # Step 5: Function to run agent on question + doc
 def run_talk_to_data_agent(question, file_text):
+    # Debug print: Show what's being sent
+    print("=== Document content being sent to agent (first 1000 chars) ===")
+    print(file_text[:1000])  # Only print first 1000 characters
+    print("=== User question being sent to agent ===")
+    print(question)
+
     thread = client.beta.threads.create()
-    # Add user message
     client.beta.threads.messages.create(
         thread_id=thread.id,
         role="user",
-        content=f"My question is: {question}",
+        content=f"Here is the document for analysis:\n\n{file_text}\n\nMy question is: {question}",
     )
+    # ...rest of code...
+
     # Run the assistant
     run = client.beta.threads.runs.create(
         thread_id=thread.id,
