@@ -2,16 +2,16 @@ import os
 import streamlit as st
 from dotenv import load_dotenv
 from langdetect import detect
-import openai
 import re
 
 from utils.file_utils import read_file
-from utils.rag_engine import process_and_query
 from utils.image_utils import extract_text_from_image
+
+# Import the agent-based Q&A function
+from utils.talk_to_data_agent import run_talk_to_data_agent
 
 # Load environment variables
 load_dotenv()
-openai.api_key = os.getenv("OPENAI_API_KEY")
 
 # Streamlit page setup
 st.set_page_config(
@@ -40,7 +40,7 @@ st.markdown(
         margin-bottom: 1.5rem;
     }
     .upload-area h4, .upload-area p {
-     color: #333333 !important;
+        color: #333333 !important;
     }
     .stTextInput > div > div > input {
         padding: 1rem;
@@ -118,7 +118,6 @@ uploaded_files = st.file_uploader(
 file_text = ""
 if uploaded_files:
     combined_texts = []
-
     for uploaded_file in uploaded_files:
         with st.spinner(f"Reading {uploaded_file.name}..."):
             if uploaded_file.type in ["image/jpeg", "image/png"]:
@@ -144,53 +143,17 @@ if file_text:
     )
 
     if user_question:
-        lang = detect(user_question)
-        if lang == "ur":
-            prompt = f"سوال: {user_question}\nجواب اردو میں دیں۔"
-        elif lang == "en":
-            prompt = f"Question: {user_question}\nAnswer in English. Use bullets or numbered format where appropriate."
-        else:
-            prompt = f"{user_question}\nAnswer in the same script and tone."
-
         with st.spinner("Thinking..."):
-            from talk_to_data_agent import run_talk_to_data_agent
-
             result_text = run_talk_to_data_agent(user_question, file_text)
-            st.markdown(result_text)
 
-        answer = result.get("answer")
-        usage = result.get("usage", {})
-        sources = result.get("sources", {})
+        # Optional: make citation tags [1], [2] clickable for UI
+        def make_clickable(text):
+            return re.sub(r"\[(\d+)\]", r"<span class='citation-ref'>[\1]</span>", text)
 
-        if answer:
-            # Convert [1] style tags into clickable spans
-            def make_clickable(text):
-                return re.sub(
-                    r"\[(\d+)\]", r"<span class='citation-ref'>[\1]</span>", text
-                )
-
-            answer_with_clicks = make_clickable(answer)
-            st.markdown(
-                "<div class='result-block'><h4>Results</h4><p>"
-                + answer_with_clicks.replace("\n", "<br>")
-                + "</p></div>",
-                unsafe_allow_html=True,
-            )
-
-        if sources:
-            st.sidebar.markdown("### 📚 Citations")
-            for ref_num, meta in sources.items():
-                st.sidebar.markdown(
-                    f"""
-                **[{ref_num}] Page {meta['page_number']}**
-                > {meta['excerpt']}
-                """
-                )
-
-        if usage:
-            total_tokens = getattr(usage, "total_tokens", 0)
-            cost = (total_tokens / 1000) * 0.005
-            st.markdown(
-                f"<p style='text-align:center; color:gray;'>🧾 Used <strong>{total_tokens}</strong> tokens – Approx cost: <strong>${cost:.4f}</strong></p>",
-                unsafe_allow_html=True,
-            )
+        answer_with_clicks = make_clickable(result_text)
+        st.markdown(
+            "<div class='result-block'><h4>Results</h4><p>"
+            + answer_with_clicks.replace("\n", "<br>")
+            + "</p></div>",
+            unsafe_allow_html=True,
+        )
