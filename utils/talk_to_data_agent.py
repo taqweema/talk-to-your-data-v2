@@ -70,16 +70,9 @@ def run_talk_to_data_agent(question, file_text):
     # Run the assistant
     run = client.beta.threads.runs.create(
         thread_id=thread.id,
-        assistant_id=agent.id,
-        tool_choice="auto",
-        additional_instructions="Here is the full document text you can use via your tools.",
-        tool_inputs={
-            "document_retriever_tool": {
-                "question": question,
-                "document": file_text,
-            }
-        }
+        assistant_id=agent.id
     )
+
     # Wait for run to complete
     import time
     while run.status not in ["completed", "failed"]:
